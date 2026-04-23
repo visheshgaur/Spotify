@@ -1,51 +1,46 @@
-const musicModel=require("../models/music.model")
-const {uploadFile}=require("../services/storage.services")
-const jwt=require("jsonwebtoken")
-const createMusic=async(req,res)=>{
-    const token=req.cookies.token;
-    
-    if(!token){
-        return res.status(401).json({
-            message:"Unauthorized 1"
-        })
-    }
-    let decoded;
-    try {
-        decoded=jwt.verify(token,process.env.JWT_SECRET)
-       
+const musicModel = require("../models/music.model");
+const albumModel = require("../models/album.model");
+const { uploadFile } = require("../services/storage.services");
+const jwt = require("jsonwebtoken");
+const createMusic = async (req, res) => {
 
-        if(decoded.role!="artist"){
-            return res.status(403).json({
-                message:"You are not authorized to create an music"
-            })
 
-        }
-    } catch (error) {
-      
-    return res.status(401).json({
-        message: error.message          
-    })
-    }
-    
-    
-const {title}=req.body;
-const file=req.file
+  const { title } = req.body;
+  const file = req.file;
 
-const result=await uploadFile(file.buffer.toString("base64"))
+  const result = await uploadFile(file.buffer.toString("base64"));
 
-const music=await musicModel.create({
-    uri:result.url,
+  const music = await musicModel.create({
+    uri: result.url,
     title,
-    artist:decoded.id
-})
-return res.status(201).json({
-    message:"Music Uploaded !",
-    music:{
-        id:music.id,
-        music:music.uri,
-        artist:music.artist,
-        title:music.title
-    }
-})
-}
-module.exports={createMusic}
+    artist: req.user.id
+  });
+  return res.status(201).json({
+    message: "Music Uploaded !",
+    music: {
+      id: music.id,
+      music: music.uri,
+      artist: music.artist,
+      title: music.title,
+    },
+  });
+};
+const createAlbum = async (req, res) => {
+ 
+    const { title, musics } = req.body;
+    const album = await albumModel.create({
+      title,
+      musics: musics,
+      artist: req.user.id,
+    });
+    return res.status(201).json({
+      message: "Album Created Successfully !!!",
+      album: {
+        id: album._id,
+        title: album.title,
+        musics: album.musics,
+        artist: album.artist,
+      },
+    });
+};
+module.exports = { createMusic , createAlbum };
