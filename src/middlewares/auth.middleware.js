@@ -24,4 +24,28 @@ const authArtist=(req,res,next)=>{
     }
 
 }
-module.exports={authArtist}
+const authUser=(req,res,next)=>{
+    const token=req.cookies.token;
+    if(!token){
+        return res.status(401).json({
+            message:"You are not Authenticated"
+        })
+    }
+    let decoded ;
+    try{
+        decoded=jwt.verify(token,process.env.JWT_SECRET)
+        if(decoded.role!=="user" && decoded.role!=="artist"){
+            return res.status(403).json({
+                messsage:"You are not allowed !"
+            })
+        }
+        next()
+    }
+    catch(err){
+        console.log(err);
+        res.status(401).json({
+            message:"You are not Authenticated !"
+        })
+    }
+}
+module.exports={authArtist,authUser}
